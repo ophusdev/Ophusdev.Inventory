@@ -9,17 +9,12 @@
   <ItemGroup>
     <PackageReference Include="Confluent.Kafka" Version="2.11.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.7" />
+    <PackageReference Include="Ophusdev.Kafka" Version="0.1.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Ophusdev.Inventory.Repository\Ophusdev.Inventory.Repository.csproj" />
     <ProjectReference Include="..\Ophusdev.Inventory.Shared\Ophusdev.Inventory.Shared.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="Ophusdev.Kafka">
-      <HintPath>..\..\Ophusdev.Kafka\Ophusdev.Kafka\bin\Debug\net8.0\Ophusdev.Kafka.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
 </Project>

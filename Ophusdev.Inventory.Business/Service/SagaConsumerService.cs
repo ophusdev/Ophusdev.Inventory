@@ -1,70 +1,92 @@
 ﻿using Confluent.Kafka;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Ophusdev.Inventory.Business.Abstraction;
-using Ophusdev.Inventory.Shared;
 using Ophusdev.Kafka.Abstraction;
 
-namespace Ophusdev.Orchestrator.Business.Services
+
+namespace Ophusdev.Inventory.Business.Services
 {
     public class SagaConsumerService : BackgroundService
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IKafkaConsumer _kafkaConsumer;
+        private readonly ILogger<SagaConsumerService> _logger;
+        private readonly IDictionary<string, IKafkaHandlerRegistry.RawKafkaMessageHandler> _topicHandlers;
 
-        public SagaConsumerService(IServiceProvider serviceProvider, IKafkaConsumer kafkaConsumer)
+        public SagaConsumerService(
+            IServiceProvider serviceProvider,
+            IKafkaConsumer kafkaConsumer,
+            ILogger<SagaConsumerService> logger,
+            IKafkaHandlerRegistry handlerRegistry)
         {
             _serviceProvider = serviceProvider;
             _kafkaConsumer = kafkaConsumer;
+            _logger = logger;
+            _topicHandlers = handlerRegistry.GetHandlers();
+
         }
 
-        private async Task HandleMessageAsync(string topic, string message)
+        private async Task ProcessKafkaMessageAsync(string topic, string message)
         {
+            _logger.LogInformation("Received message on topic: {topic}", topic);
+
+            // I need to create a new scope for each message processing to avoid the Dispose() of services
             using var scope = _serviceProvider.CreateScope();
-
-            switch (topic)
+            try
             {
-                case Topic.TOPIC_INVENTORY_REQUEST:
-                    var inventoryRequest = System.Text.Json.JsonSerializer.Deserialize<InventoryRequest>(message);
-                    
-                    var inventoryService = scope.ServiceProvider.GetRequiredService<IInventoryRoomService>();
-                    await inventoryService.ProcessInventoryRequestAsync(inventoryRequest);
-                    
-                    break;
+                IInventoryService inventoryService = scope.ServiceProvider.GetRequiredService<IInventoryService>();
 
-                case Topic.TOPIC_COMPENSATION_REQUEST:
-                    var compensationRequest = System.Text.Json.JsonSerializer.Deserialize<CompensationRequest>(message);
+                // Look up the handler in the dictionary and invoke it
+                if (_topicHandlers.TryGetValue(topic, out var handler))
+                {
+                    _logger.LogInformation("Found handler for topic: topic={topic}", topic);
 
-                    if (compensationRequest.Type != CompensationType.Inventory)
-                    {
-                        break;
-                    }
-
-                    inventoryService = scope.ServiceProvider.GetRequiredService<IInventoryRoomService>();
-                    await inventoryService.CompensateInventoryAsync(compensationRequest.BookingId);
-
-                    break;
+                     await handler(inventoryService, topic, message);
+                }
+                else
+                {
+                    _logger.LogWarning("No handler registered for topic: topic={topic}", topic);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing message on topic: topic={topic}, message={message}", topic, message);
             }
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await _kafkaConsumer.Subscribe(new[]
-                    {
-                        Topic.TOPIC_INVENTORY_REQUEST,
-                        Topic.TOPIC_COMPENSATION_REQUEST
-                    }, HandleMessageAsync, stoppingToken);
+            string[] topicsToSubscribe = _topicHandlers.Keys.ToArray();
 
-                }
-                catch (ConsumeException ex)
-                {
-                    Console.WriteLine($"Kafka consume error: {ex.Message}");
-                }
-            }, stoppingToken);
+            try
+            {
+                _logger.LogInformation("Subscribing to Kafka topics: topics={topics}", string.Join(", ", topicsToSubscribe));
+
+                await _kafkaConsumer.Subscribe(
+                    topicsToSubscribe,
+                    ProcessKafkaMessageAsync,
+                    stoppingToken
+                );
+
+                _logger.LogInformation("Successfully subscribed to topics: topics={topics}", string.Join(", ", topicsToSubscribe));
+
+                // TODO: capire se ci vuole
+                await Task.Delay(Timeout.Infinite, stoppingToken);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogInformation("SagaConsumerService is stopping due to cancellation.");
+            }
+            catch (ConsumeException ex)
+            {
+                _logger.LogError(ex, "Kafka consume error: message={message}", ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An unexpected error occurred in SagaConsumerService: message={message}", ex.Message);
+            }
         }
     }
 }

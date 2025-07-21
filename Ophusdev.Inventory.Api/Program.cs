@@ -3,13 +3,15 @@ using Inventory.Business.Abstraction;
 using Inventory.Repository;
 using Inventory.Repository.Abstraction;
 using Microsoft.EntityFrameworkCore;
+using Ophusdev.Inventory.Api.Extensions;
 using Ophusdev.Inventory.Business.Abstraction;
 using Ophusdev.Inventory.Business.Service;
+using Ophusdev.Inventory.Business.Services;
 using Ophusdev.Kafka.Abstraction;
 using Ophusdev.Kafka.Configuration;
 using Ophusdev.Kafka.Consumer;
+using Ophusdev.Kafka.Extensions;
 using Ophusdev.Kafka.Producer;
-using Ophusdev.Orchestrator.Business.Services;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,10 +26,13 @@ builder.Services.AddScoped<IRepository, Repository>();
 builder.Services.AddScoped<IBusiness, Business>();
 
 builder.Services.Configure<KafkaSettings>(builder.Configuration.GetSection("Kafka"));
+builder.Services.AddSingleton<ITopicTranslator, TopicTranslator>();
 builder.Services.AddSingleton<IKafkaProducer, KafkaProducer>();
 builder.Services.AddSingleton<IKafkaConsumer, KafkaConsumer>();
 
-builder.Services.AddScoped<IInventoryRoomService, InventoryRoomService>();
+builder.Services.AddScoped<IInventoryService, InventoryService>();
+
+builder.Services.AddKafkaTopicHandlers();
 
 builder.Services.AddHostedService<SagaConsumerService>();
 
