@@ -16,7 +16,9 @@ COPY ["Ophusdev.Inventory.Api/Ophusdev.Inventory.Api.csproj", "Ophusdev.Inventor
 COPY ["Ophusdev.Inventory.Business/Ophusdev.Inventory.Business.csproj", "Ophusdev.Inventory.Business/"]
 COPY ["Ophusdev.Inventory.Repository/Ophusdev.Inventory.Repository.csproj", "Ophusdev.Inventory.Repository/"]
 COPY ["Ophusdev.Inventory.Shared/Ophusdev.Inventory.Shared.csproj", "Ophusdev.Inventory.Shared/"]
+
 RUN dotnet restore "./Ophusdev.Inventory.Api/Ophusdev.Inventory.Api.csproj"
+
 COPY . .
 WORKDIR "/src/Ophusdev.Inventory.Api"
 RUN dotnet build "./Ophusdev.Inventory.Api.csproj" -c %BUILD_CONFIGURATION% -o /app/build
@@ -30,4 +32,4 @@ RUN dotnet publish "./Ophusdev.Inventory.Api.csproj" -c %BUILD_CONFIGURATION% -o
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Inventory.Api.dll"]
+ENTRYPOINT ["dotnet", "Ophusdev.Inventory.Api.dll"]
