@@ -31,7 +31,6 @@ public class Business(IRepository repository, ILogger<Business> logger) : IBusin
             PricePerNight = room.PricePerNight,
             MaxCapacity = room.MaxCapacity,
             RoomCategory = room.RoomCategory,
-            IsAvailable = room.IsAvailable
         };
     }
 
@@ -50,7 +49,6 @@ public class Business(IRepository repository, ILogger<Business> logger) : IBusin
                 PricePerNight = room.PricePerNight,
                 MaxCapacity = room.MaxCapacity,
                 RoomCategory = room.RoomCategory,
-                IsAvailable = room.IsAvailable
             });
         }
         return rooms;

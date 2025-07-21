@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
+using Ophusdev.Inventory.Repository.Model;
 
 namespace Inventory.Repository.Model;
 
@@ -12,6 +12,6 @@ public class Room
     public int MaxCapacity { get; set; }
     // @see Inventory.Shared.RoomDto.RoomCategoryEnum
     public int RoomCategory { get; set; }
-    public bool IsAvailable { get; set; }
 
+    public ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
 }

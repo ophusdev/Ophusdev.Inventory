@@ -17,7 +17,5 @@
         public int MaxCapacity { get; set; }
 
         public int RoomCategory { get; set; }
-
-        public bool IsAvailable { get; set; }
     }
 }
