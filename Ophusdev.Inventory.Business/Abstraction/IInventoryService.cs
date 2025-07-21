@@ -2,9 +2,9 @@
 
 namespace Ophusdev.Inventory.Business.Abstraction
 {
-    public interface IInventoryRoomService
+    public interface IInventoryService
     {
         Task ProcessInventoryRequestAsync(InventoryRequest request);
-        Task CompensateInventoryAsync(string bookingId);
+        Task CompensateInventoryAsync(CompensationRequest request);
     }
 }
