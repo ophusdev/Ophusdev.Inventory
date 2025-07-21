@@ -24,4 +24,10 @@
     <ProjectReference Include="..\Ophusdev.Inventory.Repository\Ophusdev.Inventory.Repository.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="Ophusdev.Kafka">
+      <HintPath>..\..\Ophusdev.Kafka\Ophusdev.Kafka\bin\Debug\net8.0\Ophusdev.Kafka.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>
